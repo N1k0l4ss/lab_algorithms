@@ -27,6 +27,123 @@ void goingtotime(trains* train);
 void printlist(trains* train);
 void add(trains* train);
 void goingtowitchreserved(trains* train);
+void dellist(trains* train);
+
+void fload(trains* train) {
+    fstream file;
+    while (true)
+    {
+        cout << "Введите название или путь к файлу: ";
+        cin.ignore();
+        cin.clear();
+        cin >> path;
+        file.open(path, fstream::in);
+        if (file.is_open())
+            break;
+        system("cls");
+        cout << "Файл не найден, попробуйте снова\n";
+    }
+    trains* temp;
+    while(true)
+    {
+        temp = new trains;
+        file.read((char*)&*temp, sizeof(trains));
+        if (file.eof())
+            break;
+        temp->next = train->next;
+        train->next = temp;
+        temp = nullptr;
+    }
+    file.close();
+    system("cls");
+}
+
+void fwrite(trains* train)
+{
+    cout << "Введите название или путь к файлу: ";
+    cin >> path;
+    char select;
+    fstream file = fstream(path, fstream::out);
+    if (file.is_open())
+    {
+        file.close();
+        system("cls");
+        cout << "Файл с таким именем уже найден! Хотете продолжить запись в него или перезаписать?\n";
+        cout << "Overwrite/append?[o/a] ";
+        while (true)
+        {
+            cin >> select;
+            if (select == 'o')
+            {
+                remove(path.c_str());
+                cout << path.c_str() << endl;
+                break;
+            }
+            if (select == 'a')
+                break;
+            cout << "Неверный ввод, повторите![o/a]: ";
+        }
+    }
+    char sel;
+    cout << "One train/All trains?[o/a]\n";
+    while (true)
+    {
+        cin >> sel;
+        if (sel == 'o')
+            break;
+        if (sel == 'a')
+        {
+            file.open(path, fstream::out);
+            trains* p = train->next;
+            while(p)
+            {
+                file.write((char*)&*p, sizeof(trains));
+                p = p->next;
+            }
+            file.close();
+            system("cls");
+            return;
+        }
+        cout << "Неверный ввод, повторите![o/a]: ";
+    }
+    while (true)
+    {
+        system("cls");
+        trains* p = train->next;
+        int size = 0;
+        while (p)
+        {
+            printlist(p);
+            size++;
+            p = p->next;
+        }
+        cout << "\nВведите номер поезда, который желаете записать.\n";
+        cout << "Чтобы прекратить ввод введите \"000\"\n";
+        int number;
+        while (true)
+        {
+            cin >> number;
+            if ((number >= 0 && number <= size) || number == 000)
+                break;
+            cout << "Введён неверный номер, попробуйте снова:\t";
+        }
+        if (number != 000)
+        {
+            p = train->next;
+            while (p)
+            {
+                if (p->number == number)
+                    break;
+                p = p->next;
+            }
+            file.open(path, fstream::out | fstream::app);
+            file.write((char*)&*p, sizeof(trains));
+            file.close();
+        }
+        else break;
+    }
+    system("cls");
+}
 
 void dellist(trains* train) {
     while (train->next) {
@@ -120,7 +237,7 @@ int main()
         if (sel == 2)
         {
             system("cls");
-            //fload(train, size);
+            fload(train);
             break;
         }
         system("cls");
@@ -286,7 +403,6 @@ void add(trains* train)
     cout << "Количество плацкартных мест: ";
     cin >> temp->reservedsit;
     temp->fullquantity = temp->coupe + temp->reservedsit;
-
     int id = 0;
     trains* vrtmp = train;
     while (vrtmp->next)
@@ -294,7 +410,6 @@ void add(trains* train)
         id++;
         vrtmp = vrtmp->next;
     }
-
     temp->number = id + 1;
     temp->next = train->next;
     train->next = temp;
@@ -349,11 +464,10 @@ void menu(trains* train)
         {
             system("cls");
             trains* p;
-            p = train;
+            p = train->next;
             while (p!=NULL)
             {
-                if (p->number!=0)
-                    printlist(p);
+                printlist(p);
                 p = p->next;
             }
             cout << "-----------------------------------------------------------------------" << endl;
@@ -373,7 +487,7 @@ void menu(trains* train)
         }
         if (sel == 5)
         {
-            //fwrite(train);
+            fwrite(train);
             break;
         }
         if (sel == 6)
@@ -406,7 +520,10 @@ void menu(trains* train)
         if (sel == 8)
         {
             system("cls");
-            //fload(train, size);
+            dellist(train);
+            train = new trains;
+            train->next = NULL;
+            fload(train);
             break;
         }
         cout << "Неверный ввод, пожалуйста, повторите!\n";
